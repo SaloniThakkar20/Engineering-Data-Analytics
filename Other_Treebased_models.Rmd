@@ -1,0 +1,87 @@
+---
+title: "ShubhamTreeModelsBig"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+SPLITTING FULL DATA INTO TRAIN AND TEST
+```{r}
+set.seed(3)
+train <- sample(1:nrow(data_full), nrow(data_full) * 0.75)
+full.train <- data_full[train, ]
+full.test <- data_full[-train,]
+```
+
+REGRESSION TREE ON FULL DATA (TRAINING)
+```{r}
+library(tree)
+reg.tree = tree(Mean.R.~., data = full.train)
+summary(reg.tree)
+```
+
+Plotting the tree
+```{r}
+plot(reg.tree)
+text(reg.tree ,pretty = 0)
+```
+
+Applying the model on test data to obtain predictions
+```{r}
+yhat = predict(reg.tree,newdata = full.test)
+mean((yhat - full.test$Mean.R.)^2)
+```
+
+Printing the model in textual form
+```{r}
+reg.tree
+```
+
+Using cross validation to create a plot of error vs number of terminal nodes
+```{r}
+set.seed(456)
+cv_full_reg_tree = cv.tree(reg.tree)
+plot(cv_full_reg_tree$size, cv_full_reg_tree$dev, type = "b")
+```
+
+PRUNING THE FULL TREE
+5 gives us the lowest point in the graph, so we now prune the tree to obtain the 5-node tree
+
+```{r}
+prune.full_reg_tree = prune.tree(reg.tree, best = 5)
+plot(prune.full_reg_tree)
+text(prune.full_reg_tree, pretty=0)
+```
+
+Applying the pruned model on test data to obtain predictions
+```{r}
+yhat = predict(prune.full_reg_tree,newdata = full.test)
+mean((yhat - full.test$Mean.R.)^2)
+```
+
+Pruning reduces the test error from 0.028 to 0.023 -> Not much! what to do?
+
+BAGGING ON FULL TREE
+
+```{r}
+library(randomForest)
+set.seed(10)
+bag.full = randomForest(Mean.R.~., data=full.train, mtry = 66, importance = TRUE)
+```
+```{r}
+yhat.bag = predict(bag.full, newdata=full.test)
+mean((yhat.bag - full.test$Mean.R.)^2)
+```
+
+plotting the importance of predictors
+```{r}
+varImpPlot(bag.full)
+```
+
+The most important predictors seem to be retail2 and workplace3
+
+The test MSE obtained using bagging is 0.01, which is roughly half of what we obtained using optimally-pruned single tree.

@@ -1,0 +1,59 @@
+---
+title: "EDA_proj_Lasso"
+author: "Saloni Thakkar"
+date: "12/11/2020"
+output: word_document
+---
+```{r}
+df <- read.csv("C:\\Users\\saloni\\Desktop\\MIS\\project_data.csv")
+dt = sort(sample(nrow(df), nrow(df)*.7))
+train<-df[dt,]
+test<-df[-dt,]
+
+l1 = lm(Mean_R ~., data=df )
+summary(l1)
+```
+
+```{r}
+library(glmnet)
+xmatrix <- model.matrix(Mean_R ~.,data=df)[, -1]
+grid = 10 ^ seq(4, -2, length=100)
+mdlasso <- cv.glmnet(xmatrix, df[,"Mean_R"], alpha = 1, lambda=grid)
+plot(mdlasso)
+
+```
+
+```{r}
+bestlambda <- mdlasso$lambda.min
+bestlambda
+fit.lasso <- glmnet(xmatrix, df[,"Mean_R"], alpha = 1)
+predict(fit.lasso, s = bestlambda, type = "coefficients")
+```
+
+```{r}
+library(leaps)
+regfit.train<-regsubsets(Mean_R~.,data=train, nvmax = 5, really.big = T)
+summary(regfit.train)
+```
+
+```{r}
+Columnsum=summary(regfit.train)
+which.min(Columnsum$cp)
+which.min(Columnsum$bic)
+which.max(Columnsum$adjr2)
+val.errors = rep(NA,12)
+test.Coll = model.matrix(Mean_R ~., data=test)
+
+```
+
+```{r}
+train.matrix = model.matrix(Mean_R~., data=train)
+test.matrix = model.matrix(Mean_R~., data=test)
+grid = 10 ^ seq(4, -2, length=100)
+mod.lasso = cv.glmnet(train.matrix, train[, "Mean_R"], alpha=1, lambda=grid, thresh=1e-12)
+bestlambda = mod.lasso$lambda.min
+bestlambda
+lasso.pred = predict(mod.lasso, newx=test.matrix, s=bestlambda)
+mean((test[, "Mean_R"] - lasso.pred)^2)
+
+```

@@ -1,0 +1,111 @@
+---
+title: "Random_Forest_Big"
+output: word_document
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+SPLITTING FULL DATA INTO TRAIN AND TEST
+```{r}
+set.seed(3)
+train <- sample(1:nrow(data_full), nrow(data_full) * 0.75)
+full.train <- data_full[train, ]
+full.test <- data_full[-train,]
+```
+
+APPLYING RANDOM FOREST ON FULL DATA
+
+Trying rf with mtry = 8
+```{r}
+library(randomForest)
+set.seed(456)
+rf.full_1 = randomForest(Mean.R.~., data=full.train, mtry = 8, importance = TRUE)
+yhat.rf.full_1 = predict(rf.full_1, newdata=full.test)
+mean((yhat.rf.full_1 - full.test$Mean.R.)^2)
+```
+
+Trying with mtry = 10
+```{r}
+set.seed(456)
+rf.full_2 = randomForest(Mean.R.~., data = full.train, mtry = 10, importance = TRUE)
+yhat.rf.full_2 = predict(rf.full_2, newdata=full.test)
+mean((yhat.rf.full_2 - full.test$Mean.R.)^2)
+```
+
+Trying with mtry = 15
+```{r}
+set.seed(456)
+rf.full_3 = randomForest(Mean.R.~., data=full.train, mtry = 15, importance = TRUE)
+yhat.rf.full_3 = predict(rf.full_3, newdata=full.test)
+mean((yhat.rf.full_3 - full.test$Mean.R.)^2)
+```
+
+Trying with mtry = 22 (p/3)
+```{r}
+set.seed(456)
+rf.full_4 = randomForest(Mean.R.~., data=full.train, mtry = 22, importance = TRUE)
+yhat.rf.full_4 = predict(rf.full_4, newdata=full.test)
+mean((yhat.rf.full_4 - full.test$Mean.R.)^2)
+```
+
+Trying with mtry = 33 (p/2)
+```{r}
+set.seed(456)
+rf.full_5 = randomForest(Mean.R.~., data=full.train, mtry = 33, importance = TRUE)
+yhat.rf.full_5 = predict(rf.full_5, newdata=full.test)
+mean((yhat.rf.full_5 - full.test$Mean.R.)^2)
+```
+
+
+Trying with mtry = 44 (2p/3)
+```{r}
+set.seed(456)
+rf.full_6 = randomForest(Mean.R.~., data=full.train, mtry = 44, importance = TRUE)
+yhat.rf.full_6 = predict(rf.full_6, newdata=full.test)
+mean((yhat.rf.full_6 - full.test$Mean.R.)^2)
+```
+
+Splitting into xtrain, xtest, ytrain, ytest
+```{r}
+full.x.train <- data_full[train, -1]
+full.x.test <- data_full[-train, -1]
+full.y.train <- data_full[train, 1]
+full.y.test <- data_full[-train, 1]
+```
+
+Applying 6 different rf models by varying mtry
+```{r}
+set.seed(456)
+rf.full_1 <- randomForest(full.x.train, y = full.y.train, xtest = full.x.test, ytest = full.y.test, mtry = 8, ntree = 500)
+rf.full_2 <- randomForest(full.x.train, y = full.y.train, xtest = full.x.test, ytest = full.y.test, mtry = 10, ntree = 500)
+rf.full_3 <- randomForest(full.x.train, y = full.y.train, xtest = full.x.test, ytest = full.y.test, mtry = 15, ntree = 500)
+rf.full_4 <- randomForest(full.x.train, y = full.y.train, xtest = full.x.test, ytest = full.y.test, mtry = 22, ntree = 500)
+rf.full_5 <- randomForest(full.x.train, y = full.y.train, xtest = full.x.test, ytest = full.y.test, mtry = 33, ntree = 500)
+rf.full_6 <- randomForest(full.x.train, y = full.y.train, xtest = full.x.test, ytest = full.y.test, mtry = 44, ntree = 500)
+```
+
+Plotting all results onto graph
+```{r}
+plot(1:500, rf.full_1$test$mse, col = "green", type = "l", xlab = "Number of Trees", ylab = "Test MSE", ylim = c(0.0075, 0.012))
+lines(1:500, rf.full_2$test$mse, col = "red", type = "l")
+lines(1:500, rf.full_3$test$mse, col = "blue", type = "l")
+lines(1:500, rf.full_4$test$mse, col = "purple", type = "l")
+lines(1:500, rf.full_5$test$mse, col = "black", type = "l")
+lines(1:500, rf.full_6$test$mse, col = "maroon", type = "l")
+legend("topright", c("m = 8", "m = 10", "m = 15", "m = 22", "m = 33", "m = 44"), col = c("green", "red", "blue", "purple", "black", "maroon"), cex = 1, lty = 1)
+```
+
+m=10 and ntree=60 is probably giving the least test error. At ntree = 500, m = 15 seems to be the best.
+
+```{r}
+mean(rf.full_1$test$mse) # m = 8
+mean(rf.full_2$test$mse) # m = 10
+mean(rf.full_3$test$mse) # m = 15
+mean(rf.full_4$test$mse) # m = 22
+mean(rf.full_5$test$mse) # m = 33
+mean(rf.full_6$test$mse) # m = 44
+```
+
